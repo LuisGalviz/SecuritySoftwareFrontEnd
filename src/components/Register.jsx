@@ -16,7 +16,7 @@ const Register = () => {
       lastName: "",
     },
     validationSchema: Yup.object({
-      username: Yup.string().required("El nombre de usuario es requerido"),
+      username: Yup.string().required("El username es requerido"),
       firstName: Yup.string().required("El nombre es requerido"),
       lastName: Yup.string().required("El apellido es requerido"),
       password: Yup.string()
@@ -55,7 +55,7 @@ const Register = () => {
           <TextField
             margin="normal"
             fullWidth
-            label="Nombre de Usuario"
+            label="Username"
             name="username"
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
