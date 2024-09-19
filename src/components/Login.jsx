@@ -12,7 +12,7 @@ import {
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import api from "../services/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -102,6 +102,11 @@ const Login = () => {
               Iniciar Sesión
             </Button>
           </form>
+        </Box>
+        <Box sx={{ mt: 2, textAlign: "center" }}>
+          <Typography variant="body2">
+            ¿No tienes una cuenta? <Link to="/register">Regístrate aquí</Link>
+          </Typography>
         </Box>
       </Container>
     </Box>

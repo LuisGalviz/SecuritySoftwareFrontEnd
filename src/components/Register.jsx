@@ -4,6 +4,7 @@ import { TextField, Button, Container, Typography, Box } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import api from "../services/api";
+import { Link } from "react-router-dom";
 
 const Register = () => {
   const formik = useFormik({
@@ -121,6 +122,11 @@ const Register = () => {
             Registrar
           </Button>
         </form>
+        <Box sx={{ mt: 2, textAlign: "center" }}>
+          <Typography variant="body2">
+            ¿Tienes una cuenta? <Link to="/">Iniciar Sesión</Link>
+          </Typography>
+        </Box>
       </Box>
     </Container>
   );
