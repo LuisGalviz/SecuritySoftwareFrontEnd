@@ -15,7 +15,7 @@ const App = () => {
           element={<Register />}
         />
         <Route
-          path="/"
+          path="/login"
           element={<Login />}
         />
         <Route

@@ -1,49 +1,130 @@
 // src/components/Dashboard.jsx
-import React from 'react';
-import { Container, Typography, Button, Box } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import React, { useState } from "react";
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  Box,
+  CssBaseline,
+} from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import LogoutIcon from "@mui/icons-material/Logout";
+import DownloadUsers from "./DownloadUser";
+import EncryptDecryptFile from "./EncryptDecryptFile";
+import { useNavigate } from "react-router-dom";
+import api from "../services/api";
+
+const drawerWidth = 240; // Ancho del Drawer
 
 const Dashboard = () => {
-    const navigate = useNavigate();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const navigate = useNavigate();
 
-    const handleDownloadUsers = async () => {
-        try {
-            const usersData = await api.downloadUsers();
-            const blob = new Blob([usersData], { type: 'text/plain' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'users.txt';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch (error) {
-            console.error('Error al descargar usuarios:', error);
-            alert('Error al descargar usuarios');
-        }
-    };
+  const toggleDrawer = (open) => (event) => {
+    setDrawerOpen(open);
+  };
 
-    const handleLogout = () => {
-        api.logout();
-        navigate('/login');
-    };
+  const handleMenuClick = (option) => {
+    setSelectedOption(option);
+    setDrawerOpen(false);
+  };
 
-    return (
-        <Container>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 4 }}>
-                <Typography variant="h5">Panel de Usuario</Typography>
-                <Button variant="contained" onClick={handleDownloadUsers} sx={{ mt: 2 }}>
-                    Descargar Tabla de Usuarios
-                </Button>
-                <Button variant="contained" onClick={() => navigate('/encrypt-decrypt')} sx={{ mt: 2 }}>
-                    Cifrar/Descifrar Archivo
-                </Button>
-                <Button variant="contained" color="secondary" onClick={handleLogout} sx={{ mt: 2 }}>
-                    Cerrar Sesión
-                </Button>
-            </Box>
-        </Container>
-    );
+  const handleLogout = () => {
+    api.logout();
+    navigate("/login");
+  };
+
+  return (
+    <Box sx={{ display: "flex" }}>
+      <CssBaseline />
+      <AppBar
+        position="fixed"
+        sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+        <Toolbar>
+          <IconButton
+            edge="start"
+            color="inherit"
+            aria-label="menu"
+            onClick={toggleDrawer(true)}>
+            <MenuIcon />
+          </IconButton>
+          <Typography
+            variant="h6"
+            noWrap
+            sx={{ flexGrow: 1 }}>
+            Dashboard
+          </Typography>
+          <IconButton
+            color="inherit"
+            onClick={handleLogout}>
+            <LogoutIcon />
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+
+      <Drawer
+        variant="persistent"
+        anchor="left"
+        open={drawerOpen}
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          [`& .MuiDrawer-paper`]: {
+            width: drawerWidth,
+            boxSizing: "border-box",
+          },
+        }}>
+        <Toolbar />{" "}
+        {/* Espacio para que el Drawer no se superponga al AppBar */}
+        <List>
+          <ListItem
+            button
+            onClick={() => handleMenuClick("download")}>
+            <ListItemText primary="Descargar Usuarios" />
+          </ListItem>
+          <ListItem
+            button
+            onClick={() => handleMenuClick("encrypt")}>
+            <ListItemText primary="Cifrar/Descifrar Archivo" />
+          </ListItem>
+        </List>
+      </Drawer>
+
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          marginLeft: drawerOpen ? `${drawerWidth}px` : 0, // Ajusta el contenido al ancho del Drawer
+          transition: (theme) =>
+            theme.transitions.create("margin", {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.leavingScreen,
+            }),
+        }}>
+        <Toolbar />{" "}
+        {/* Espacio para que el contenido no se superponga al AppBar */}
+        {selectedOption === "download" && (
+          <Box>
+            <Typography variant="h6">Descarga de Usuarios</Typography>
+            <DownloadUsers />
+          </Box>
+        )}
+        {selectedOption === "encrypt" && (
+          <Box>
+            <Typography variant="h6">Cifrar/Descifrar Archivo</Typography>
+            <EncryptDecryptFile />
+          </Box>
+        )}
+      </Box>
+    </Box>
+  );
 };
 
 export default Dashboard;
