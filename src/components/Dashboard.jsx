@@ -37,7 +37,7 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     api.logout();
-    navigate("/login");
+    navigate("/");
   };
 
   return (

@@ -124,7 +124,7 @@ const Register = () => {
         </form>
         <Box sx={{ mt: 2, textAlign: "center" }}>
           <Typography variant="body2">
-            ¿Tienes una cuenta? <Link to="/login">Iniciar Sesión</Link>
+            ¿Tienes una cuenta? <Link to="/">Iniciar Sesión</Link>
           </Typography>
         </Box>
       </Box>
