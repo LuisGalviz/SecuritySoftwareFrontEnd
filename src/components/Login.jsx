@@ -169,7 +169,7 @@ const Login = () => {
         open={snackbarOpen}
         autoHideDuration={3000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "center", horizontal: "center" }} // Centrar el Snackbar
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }} // Centrar el Snackbar
       >
         <Alert
           onClose={handleCloseSnackbar}

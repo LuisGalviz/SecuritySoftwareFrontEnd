@@ -91,13 +91,13 @@ const Dashboard = () => {
         {/* Espacio para que el Drawer no se superponga al AppBar */}
         <List>
           <ListItem
-            button
+            button="true"
             onClick={() => handleMenuClick("download")}
             selected={selectedOption === "download"}>
             <ListItemText primary="Descargar Usuarios" />
           </ListItem>
           <ListItem
-            button
+            button="true"
             onClick={() => handleMenuClick("encrypt")}
             selected={selectedOption === "encrypt"}>
             <ListItemText primary="Cifrar/Descifrar Archivo" />
