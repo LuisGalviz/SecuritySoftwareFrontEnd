@@ -5,6 +5,7 @@ import Register from "./components/Register";
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
 import EncryptDecryptFile from "./components/EncryptDecryptFile";
+import ProtectedRoute from "./components/ProtectedRoute"; // Importar el componente de rutas protegidas
 
 const App = () => {
   return (
@@ -18,19 +19,19 @@ const App = () => {
           path="/"
           element={<Login />}
         />
+
+        {/* Rutas protegidas */}
         <Route
           path="/dashboard"
-          element={<Dashboard />}
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
         />
-        <Route
-          path="/encrypt-decrypt"
-          element={<EncryptDecryptFile />}
-        />
-        {/* Otras rutas */}
       </Routes>
     </Router>
   );
 };
 
 export default App;
-
