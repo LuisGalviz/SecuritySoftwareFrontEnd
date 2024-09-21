@@ -23,8 +23,9 @@ import { auth } from "../services/firebase"; // Importa la instancia de autentic
 const drawerWidth = 240; // Ancho del Drawer
 
 const Dashboard = () => {
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(null);
+  // Estado del Drawer y la opción seleccionada, por defecto abiertos y con la primera opción seleccionada
+  const [drawerOpen, setDrawerOpen] = useState(true); // Drawer abierto por defecto
+  const [selectedOption, setSelectedOption] = useState("download"); // Primera opción seleccionada por defecto
   const navigate = useNavigate();
 
   const toggleDrawer = (open) => (event) => {
@@ -33,7 +34,7 @@ const Dashboard = () => {
 
   const handleMenuClick = (option) => {
     setSelectedOption(option);
-    setDrawerOpen(false);
+    setDrawerOpen(false); // Si quieres que el Drawer se cierre al seleccionar una opción, puedes dejarlo. De lo contrario, elimina esta línea.
   };
 
   // Función para manejar el cierre de sesión usando Firebase
@@ -91,12 +92,14 @@ const Dashboard = () => {
         <List>
           <ListItem
             button
-            onClick={() => handleMenuClick("download")}>
+            onClick={() => handleMenuClick("download")}
+            selected={selectedOption === "download"}>
             <ListItemText primary="Descargar Usuarios" />
           </ListItem>
           <ListItem
             button
-            onClick={() => handleMenuClick("encrypt")}>
+            onClick={() => handleMenuClick("encrypt")}
+            selected={selectedOption === "encrypt"}>
             <ListItemText primary="Cifrar/Descifrar Archivo" />
           </ListItem>
         </List>
