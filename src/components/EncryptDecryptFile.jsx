@@ -1,7 +1,9 @@
 // src/components/EncryptDecryptFile.jsx
 import React, { useState } from "react";
 import { Button, TextField, Box } from "@mui/material";
-import api from "../services/api";
+import { storage } from "../services/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import CryptoJS from "crypto-js";
 
 const EncryptDecryptFile = () => {
   const [file, setFile] = useState(null);
@@ -12,29 +14,30 @@ const EncryptDecryptFile = () => {
   };
 
   const handleEncrypt = async () => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("key", key);
-      await api.encryptFile(formData);
-      alert("Archivo cifrado con éxito");
-    } catch (error) {
-      console.error("Error al cifrar archivo:", error);
-      alert("Error al cifrar archivo");
-    }
+    const reader = new FileReader();
+    reader.onload = async function (event) {
+      const fileContent = event.target.result;
+      const encrypted = CryptoJS.AES.encrypt(fileContent, key).toString();
+      const blob = new Blob([encrypted], { type: "text/plain" });
+
+      const storageRef = ref(storage, `encrypted_files/${file.name}`);
+      await uploadBytes(storageRef, blob);
+      alert("Archivo cifrado y subido con éxito");
+    };
+    reader.readAsText(file);
   };
 
   const handleDecrypt = async () => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("key", key);
-      await api.decryptFile(formData);
-      alert("Archivo descifrado con éxito");
-    } catch (error) {
-      console.error("Error al descifrar archivo:", error);
-      alert("Error al descifrar archivo");
-    }
+    const storageRef = ref(storage, `encrypted_files/${file.name}`);
+    const url = await getDownloadURL(storageRef);
+
+    const response = await fetch(url);
+    const encryptedText = await response.text();
+
+    const decrypted = CryptoJS.AES.decrypt(encryptedText, key).toString(
+      CryptoJS.enc.Utf8
+    );
+    alert("Archivo descifrado: " + decrypted);
   };
 
   return (

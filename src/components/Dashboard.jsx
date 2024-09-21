@@ -17,7 +17,8 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import DownloadUsers from "./DownloadUser";
 import EncryptDecryptFile from "./EncryptDecryptFile";
 import { useNavigate } from "react-router-dom";
-import api from "../services/api";
+import { signOut } from "firebase/auth"; // Importa la función signOut
+import { auth } from "../services/firebase"; // Importa la instancia de autenticación de Firebase
 
 const drawerWidth = 240; // Ancho del Drawer
 
@@ -35,9 +36,14 @@ const Dashboard = () => {
     setDrawerOpen(false);
   };
 
-  const handleLogout = () => {
-    api.logout();
-    navigate("/");
+  // Función para manejar el cierre de sesión usando Firebase
+  const handleLogout = async () => {
+    try {
+      await signOut(auth); // Cierra la sesión del usuario en Firebase
+      navigate("/"); // Redirige al inicio de sesión
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
   };
 
   return (

@@ -1,25 +1,31 @@
 // src/components/DownloadUsers.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@mui/material";
-import api from "../services/api";
+import { db } from "../services/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 const DownloadUsers = () => {
-  const handleDownload = async () => {
-    try {
-      const response = await api.downloadUsers();
-      const blob = new Blob([response.data], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "usuarios.txt";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Error al descargar la tabla de usuarios:", error);
-      alert("Error al descargar la tabla de usuarios");
-    }
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const querySnapshot = await getDocs(collection(db, "users"));
+      const usersList = querySnapshot.docs.map((doc) => doc.data());
+      setUsers(usersList);
+    };
+
+    fetchUsers();
+  }, []);
+
+  const handleDownload = () => {
+    const usersText = users.map((user) => JSON.stringify(user)).join("\n");
+    const blob = new Blob([usersText], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "usuarios.txt";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (

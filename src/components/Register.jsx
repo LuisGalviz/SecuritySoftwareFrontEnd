@@ -3,20 +3,31 @@ import React from "react";
 import { TextField, Button, Container, Typography, Box } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import api from "../services/api";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../services/firebase";
+import { setDoc, doc } from "firebase/firestore";
 import { Link } from "react-router-dom";
+import CryptoJS from "crypto-js"; // Para el hash SHA-1
+import { useNavigate } from "react-router-dom";
 
-const Register = () => {
+const Register = () => { 
+
+  const navigate = useNavigate();
+
   const formik = useFormik({
     initialValues: {
-      username: "",
+      email: "", // Correo electrónico del usuario
+      username: "", // Nombre de usuario (login)
       password: "",
       secondPassword: "",
       firstName: "",
       lastName: "",
     },
     validationSchema: Yup.object({
-      username: Yup.string().required("El username es requerido"),
+      email: Yup.string()
+        .email("Email inválido")
+        .required("El email es requerido"),
+      username: Yup.string().required("El nombre de usuario es requerido"),
       firstName: Yup.string().required("El nombre es requerido"),
       lastName: Yup.string().required("El apellido es requerido"),
       password: Yup.string()
@@ -31,8 +42,28 @@ const Register = () => {
     }),
     onSubmit: async (values) => {
       try {
-        await api.register(values);
+        // Crear el hash SHA-1 de la contraseña
+        const passwordHash = CryptoJS.SHA1(values.password).toString();
+
+        // Registrar usuario en Firebase Authentication con el correo y la contraseña original
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          values.email, // El correo electrónico para Firebase Authentication
+          values.password // Contraseña para Firebase Authentication
+        );
+        const user = userCredential.user;
+
+        // Guardar el usuario en Firestore con la información adicional y el hash de la contraseña
+        await setDoc(doc(db, "users", user.uid), {
+          username: values.username, // Nombre de usuario (login)
+          firstName: values.firstName, // Nombre
+          lastName: values.lastName, // Apellido
+          email: values.email, // Almacenar el correo en Firestore también si es necesario
+          passwordHash: passwordHash, // Guardar la contraseña como hash SHA-1
+        });
+
         alert("Usuario registrado con éxito");
+        navigate("/"); // Redirigir al inicio de sesión
       } catch (error) {
         console.error("Error al registrar usuario:", error);
         alert("Error al registrar usuario");
@@ -55,7 +86,18 @@ const Register = () => {
           <TextField
             margin="normal"
             fullWidth
-            label="Username"
+            label="Correo Electrónico"
+            name="email"
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+            value={formik.values.email}
+            error={formik.touched.email && Boolean(formik.errors.email)}
+            helperText={formik.touched.email && formik.errors.email}
+          />
+          <TextField
+            margin="normal"
+            fullWidth
+            label="Nombre de Usuario (login)"
             name="username"
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}

@@ -7,11 +7,11 @@ import {
   Typography,
   Box,
   FormControl,
-  FormHelperText,
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import api from "../services/api";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../services/firebase";
 import { useNavigate, Link } from "react-router-dom";
 
 const Login = () => {
@@ -19,23 +19,25 @@ const Login = () => {
 
   const formik = useFormik({
     initialValues: {
-      username: "",
+      email: "", // Cambiado de username a email
       password: "",
     },
     validationSchema: Yup.object({
-      username: Yup.string().required("El nombre de usuario es requerido"),
+      email: Yup.string()
+        .email("Debes ingresar un email válido")
+        .required("El correo electrónico es requerido"),
       password: Yup.string().required("La contraseña es requerida"),
     }),
     onSubmit: async (values) => {
       try {
-        await api.login(values);
+        await signInWithEmailAndPassword(auth, values.email, values.password); // Usa email
         alert("Inicio de sesión exitoso");
         navigate("/dashboard");
       } catch (error) {
         console.error("Error al iniciar sesión:", error);
         formik.setFieldError(
           "password",
-          "Nombre de usuario o contraseña incorrectos"
+          "Correo electrónico o contraseña incorrectos"
         );
       }
     },
@@ -64,15 +66,13 @@ const Login = () => {
               margin="normal">
               <TextField
                 required
-                label="Nombre de Usuario"
-                name="username"
+                label="Correo Electrónico"
+                name="email" // Cambiado a email
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                value={formik.values.username}
-                error={
-                  formik.touched.username && Boolean(formik.errors.username)
-                }
-                helperText={formik.touched.username && formik.errors.username}
+                value={formik.values.email}
+                error={formik.touched.email && Boolean(formik.errors.email)}
+                helperText={formik.touched.email && formik.errors.email}
                 variant="outlined"
               />
             </FormControl>
