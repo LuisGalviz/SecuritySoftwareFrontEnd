@@ -1,47 +1,97 @@
 // src/components/Login.jsx
-import React from "react";
+import React, { useState } from "react";
 import {
   TextField,
   Button,
   Container,
   Typography,
   Box,
+  Snackbar,
+  Alert,
   FormControl,
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../services/firebase";
+import { auth, db } from "../services/firebase";
 import { useNavigate, Link } from "react-router-dom";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+
+  // Función para encontrar el correo electrónico por nombre de usuario en Firestore
+  const findEmailByUsername = async (username) => {
+    const usersCollection = collection(db, "users");
+    const q = query(usersCollection, where("username", "==", username));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const userData = querySnapshot.docs[0].data();
+      return userData.email; // Devuelve el correo electrónico correspondiente al nombre de usuario
+    } else {
+      return null; // Si no se encuentra el nombre de usuario
+    }
+  };
 
   const formik = useFormik({
     initialValues: {
-      email: "", // Cambiado de username a email
+      identifier: "", // Este campo puede ser el nombre de usuario o el correo electrónico
       password: "",
     },
     validationSchema: Yup.object({
-      email: Yup.string()
-        .email("Debes ingresar un email válido")
-        .required("El correo electrónico es requerido"),
+      identifier: Yup.string().required(
+        "El correo o nombre de usuario es requerido"
+      ),
       password: Yup.string().required("La contraseña es requerida"),
     }),
     onSubmit: async (values) => {
       try {
-        await signInWithEmailAndPassword(auth, values.email, values.password); // Usa email
-        alert("Inicio de sesión exitoso");
-        navigate("/dashboard");
+        let email = values.identifier;
+
+        // Verificar si el campo "identifier" parece un correo electrónico
+        const isEmail = /\S+@\S+\.\S+/.test(email);
+
+        // Si no es un correo electrónico, asumimos que es un nombre de usuario y lo buscamos en Firestore
+        if (!isEmail) {
+          email = await findEmailByUsername(values.identifier);
+          if (!email) {
+            setSnackbarMessage("Nombre de usuario no encontrado");
+            setSnackbarSeverity("error");
+            setSnackbarOpen(true);
+            return;
+          }
+        }
+
+        // Iniciar sesión con Firebase Authentication usando el correo electrónico encontrado
+        await signInWithEmailAndPassword(auth, email, values.password);
+        setSnackbarMessage("Inicio de sesión exitoso");
+        setSnackbarSeverity("success");
+        setSnackbarOpen(true);
+
+        // Redirigir al dashboard
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1500);
       } catch (error) {
         console.error("Error al iniciar sesión:", error);
-        formik.setFieldError(
-          "password",
-          "Correo electrónico o contraseña incorrectos"
-        );
+        setSnackbarMessage("Correo electrónico o contraseña incorrectos");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
       }
     },
   });
+
+  // Función para cerrar el Snackbar
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
 
   return (
     <Box
@@ -66,13 +116,17 @@ const Login = () => {
               margin="normal">
               <TextField
                 required
-                label="Correo Electrónico"
-                name="email" // Cambiado a email
+                label="Correo o Nombre de Usuario"
+                name="identifier"
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                value={formik.values.email}
-                error={formik.touched.email && Boolean(formik.errors.email)}
-                helperText={formik.touched.email && formik.errors.email}
+                value={formik.values.identifier}
+                error={
+                  formik.touched.identifier && Boolean(formik.errors.identifier)
+                }
+                helperText={
+                  formik.touched.identifier && formik.errors.identifier
+                }
                 variant="outlined"
               />
             </FormControl>
@@ -109,6 +163,21 @@ const Login = () => {
           </Typography>
         </Box>
       </Container>
+
+      {/* Snackbar para mostrar los mensajes */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "center", horizontal: "center" }} // Centrar el Snackbar
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

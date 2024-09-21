@@ -1,18 +1,58 @@
 // src/components/Register.jsx
-import React from "react";
-import { TextField, Button, Container, Typography, Box } from "@mui/material";
+import React, { useState } from "react";
+import {
+  TextField,
+  Button,
+  Container,
+  Typography,
+  Box,
+  Snackbar,
+  Alert,
+} from "@mui/material"; // Importa Snackbar y Alert
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../services/firebase";
-import { setDoc, doc } from "firebase/firestore";
-import { Link } from "react-router-dom";
+import {
+  setDoc,
+  doc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore"; // Firestore para buscar username
+import { Link, useNavigate } from "react-router-dom";
 import CryptoJS from "crypto-js"; // Para el hash SHA-1
-import { useNavigate } from "react-router-dom";
 
-const Register = () => { 
-
+const Register = () => {
   const navigate = useNavigate();
+  const [snackbarOpen, setSnackbarOpen] = useState(false); // Estado para controlar el Snackbar
+  const [snackbarMessage, setSnackbarMessage] = useState(""); // Mensaje del Snackbar
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success"); // Severidad del Snackbar (success, error, etc.)
+  const [isUsernameAvailable, setIsUsernameAvailable] = useState(true); // Estado para validar el nombre de usuario
+
+  // Función para verificar si el username es único
+  const checkUsernameExists = async (username) => {
+    const usersCollection = collection(db, "users");
+    const q = query(usersCollection, where("username", "==", username));
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty; // Devuelve true si ya existe un documento con ese username
+  };
+
+  // Manejo del cambio en el campo de nombre de usuario para validación en tiempo real
+  const handleUsernameChange = async (e) => {
+    formik.handleChange(e);
+    const username = e.target.value;
+    if (username) {
+      const usernameExists = await checkUsernameExists(username);
+      setIsUsernameAvailable(!usernameExists); // Si el username existe, no está disponible
+      if (usernameExists) {
+        setSnackbarMessage("El nombre de usuario ya está en uso.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+      }
+    }
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -42,6 +82,14 @@ const Register = () => {
     }),
     onSubmit: async (values) => {
       try {
+        // Si el nombre de usuario ya existe, detener el registro
+        if (!isUsernameAvailable) {
+          setSnackbarMessage("El nombre de usuario ya está en uso.");
+          setSnackbarSeverity("error");
+          setSnackbarOpen(true);
+          return;
+        }
+
         // Crear el hash SHA-1 de la contraseña
         const passwordHash = CryptoJS.SHA1(values.password).toString();
 
@@ -62,14 +110,31 @@ const Register = () => {
           passwordHash: passwordHash, // Guardar la contraseña como hash SHA-1
         });
 
-        alert("Usuario registrado con éxito");
-        navigate("/"); // Redirigir al inicio de sesión
+        // Mostrar Snackbar de éxito
+        setSnackbarMessage("Usuario registrado con éxito.");
+        setSnackbarSeverity("success");
+        setSnackbarOpen(true);
+
+        // Redirigir al dashboard después de unos segundos
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1500);
       } catch (error) {
         console.error("Error al registrar usuario:", error);
-        alert("Error al registrar usuario");
+        setSnackbarMessage("Error al registrar usuario. Inténtalo nuevamente.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
       }
     },
   });
+
+  // Función para cerrar el Snackbar
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
 
   return (
     <Container maxWidth="xs">
@@ -99,11 +164,18 @@ const Register = () => {
             fullWidth
             label="Nombre de Usuario (login)"
             name="username"
-            onChange={formik.handleChange}
+            onChange={handleUsernameChange} // Verificar en tiempo real si el nombre de usuario está en uso
             onBlur={formik.handleBlur}
             value={formik.values.username}
-            error={formik.touched.username && Boolean(formik.errors.username)}
-            helperText={formik.touched.username && formik.errors.username}
+            error={
+              !isUsernameAvailable ||
+              (formik.touched.username && Boolean(formik.errors.username))
+            }
+            helperText={
+              !isUsernameAvailable
+                ? "El nombre de usuario ya está en uso"
+                : formik.touched.username && formik.errors.username
+            }
           />
           <TextField
             margin="normal"
@@ -164,12 +236,28 @@ const Register = () => {
             Registrar
           </Button>
         </form>
+
         <Box sx={{ mt: 2, textAlign: "center" }}>
           <Typography variant="body2">
             ¿Tienes una cuenta? <Link to="/">Iniciar Sesión</Link>
           </Typography>
         </Box>
       </Box>
+
+      {/* Snackbar para mostrar los mensajes */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "center", horizontal: "center" }} // Centrar el Snackbar
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
