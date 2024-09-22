@@ -1,12 +1,5 @@
-// src/components/EncryptDecryptFile.jsx
 import React, { useState } from "react";
-import {
-  Button,
-  TextField,
-  Box,
-  Snackbar,
-  Alert,
-} from "@mui/material";
+import { Button, TextField, Box, Snackbar, Alert } from "@mui/material";
 import CryptoJS from "crypto-js";
 
 const EncryptDecryptFile = () => {
@@ -31,10 +24,11 @@ const EncryptDecryptFile = () => {
     }
 
     const reader = new FileReader();
-    reader.onload = async function (event) {
+    reader.onload = function (event) {
       const fileContent = event.target.result;
-      const wordArray = CryptoJS.lib.WordArray.create(fileContent);
-      const encrypted = CryptoJS.AES.encrypt(wordArray, key).toString();
+      const wordArray = CryptoJS.lib.WordArray.create(fileContent); // Convertir a formato de CryptoJS
+      const encrypted = CryptoJS.AES.encrypt(wordArray, key).toString(); // Cifrar
+
       const blob = new Blob([encrypted], { type: "text/plain" });
 
       // Crear un enlace temporal para descargar el archivo cifrado
@@ -47,7 +41,7 @@ const EncryptDecryptFile = () => {
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
     };
-    reader.readAsArrayBuffer(file); // Leer el archivo como ArrayBuffer para archivos binarios
+    reader.readAsArrayBuffer(file); // Leer el archivo como ArrayBuffer para manejar binarios
   };
 
   // Descifrar el archivo seleccionado localmente con la clave proporcionada
@@ -62,24 +56,24 @@ const EncryptDecryptFile = () => {
     }
 
     const reader = new FileReader();
-    reader.onload = async function (event) {
+    reader.onload = function (event) {
       const encryptedContent = event.target.result;
+
       try {
+        // Descifrar el archivo con la clave proporcionada
         const decrypted = CryptoJS.AES.decrypt(encryptedContent, key).toString(
-          CryptoJS.enc.Utf8
+          CryptoJS.enc.Base64
         );
 
-        if (!decrypted) {
-          setSnackbarMessage(
-            "Clave incorrecta. No se pudo descifrar el archivo"
-          );
-          setSnackbarSeverity("error");
-          setSnackbarOpen(true);
-          return;
+        // Convertir el archivo descifrado de Base64 a formato binario para poder ser descargado
+        const byteCharacters = atob(decrypted);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
         }
+        const byteArray = new Uint8Array(byteNumbers);
 
-        // Crear un Blob con el contenido descifrado
-        const blob = new Blob([decrypted], { type: "text/plain" });
+        const blob = new Blob([byteArray], { type: file.type });
 
         // Crear un enlace temporal para descargar el archivo descifrado
         const link = document.createElement("a");
@@ -97,7 +91,7 @@ const EncryptDecryptFile = () => {
         setSnackbarOpen(true);
       }
     };
-    reader.readAsText(file); // Leer como texto cifrado
+    reader.readAsText(file); // Leer el archivo cifrado como texto
   };
 
   // Cerrar el Snackbar
