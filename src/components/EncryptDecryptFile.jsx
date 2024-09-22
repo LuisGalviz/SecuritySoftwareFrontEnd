@@ -14,6 +14,36 @@ const EncryptDecryptFile = () => {
     setFile(e.target.files[0]);
   };
 
+  // Convertir un ArrayBuffer a un formato que CryptoJS pueda manejar (WordArray)
+  const arrayBufferToWordArray = (ab) => {
+    const i8a = new Uint8Array(ab);
+    const a = [];
+    for (let i = 0; i < i8a.length; i += 4) {
+      a.push(
+        (i8a[i] << 24) | (i8a[i + 1] << 16) | (i8a[i + 2] << 8) | i8a[i + 3]
+      );
+    }
+    return CryptoJS.lib.WordArray.create(a, i8a.length);
+  };
+
+  // Convertir un WordArray a ArrayBuffer para manejar archivos binarios
+  const wordArrayToArrayBuffer = (wordArray) => {
+    const arrayOfWords = wordArray.hasOwnProperty("words")
+      ? wordArray.words
+      : [];
+    const length = wordArray.hasOwnProperty("sigBytes")
+      ? wordArray.sigBytes
+      : arrayOfWords.length * 4;
+
+    const uInt8Array = new Uint8Array(length);
+    let index = 0;
+    for (let i = 0; i < length; i++) {
+      const word = arrayOfWords[i >>> 2];
+      uInt8Array[index++] = (word >> (24 - (i % 4) * 8)) & 0xff;
+    }
+    return uInt8Array.buffer;
+  };
+
   // Cifrar el archivo local y ofrecerlo para descarga
   const handleEncrypt = async () => {
     if (!file || !key) {
@@ -26,10 +56,10 @@ const EncryptDecryptFile = () => {
     const reader = new FileReader();
     reader.onload = function (event) {
       const fileContent = event.target.result;
-      const wordArray = CryptoJS.lib.WordArray.create(fileContent); // Convertir a formato de CryptoJS
-      const encrypted = CryptoJS.AES.encrypt(wordArray, key).toString(); // Cifrar
+      const wordArray = arrayBufferToWordArray(fileContent); // Convertir ArrayBuffer a WordArray para CryptoJS
+      const encrypted = CryptoJS.AES.encrypt(wordArray, key).toString(); // Cifrar el archivo
 
-      const blob = new Blob([encrypted], { type: "text/plain" });
+      const blob = new Blob([encrypted], { type: "text/plain" }); // Crear un blob cifrado
 
       // Crear un enlace temporal para descargar el archivo cifrado
       const link = document.createElement("a");
@@ -60,20 +90,22 @@ const EncryptDecryptFile = () => {
       const encryptedContent = event.target.result;
 
       try {
-        // Descifrar el archivo con la clave proporcionada
-        const decrypted = CryptoJS.AES.decrypt(encryptedContent, key).toString(
-          CryptoJS.enc.Base64
-        );
+        // Descifrar el contenido
+        const decrypted = CryptoJS.AES.decrypt(encryptedContent, key);
+        const decryptedWordArray = decrypted; // Obtener el WordArray descifrado
+        const decryptedArrayBuffer = wordArrayToArrayBuffer(decryptedWordArray); // Convertir WordArray a ArrayBuffer
 
-        // Convertir el archivo descifrado de Base64 a formato binario para poder ser descargado
-        const byteCharacters = atob(decrypted);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        if (!decryptedArrayBuffer.byteLength) {
+          setSnackbarMessage(
+            "Clave incorrecta. No se pudo descifrar el archivo"
+          );
+          setSnackbarSeverity("error");
+          setSnackbarOpen(true);
+          return;
         }
-        const byteArray = new Uint8Array(byteNumbers);
 
-        const blob = new Blob([byteArray], { type: file.type });
+        // Crear un Blob con el contenido descifrado
+        const blob = new Blob([decryptedArrayBuffer], { type: file.type });
 
         // Crear un enlace temporal para descargar el archivo descifrado
         const link = document.createElement("a");
