@@ -3,13 +3,14 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
+// Configuración de Firebase con variables de entorno
 const firebaseConfig = {
-  apiKey: "AIzaSyAcrFonV9mYE_0h4RqWyQ9O0n3Z0muD4n0",
-  authDomain: "web-c3ea8.firebaseapp.com",
-  projectId: "web-c3ea8",
-  storageBucket: "web-c3ea8.appspot.com",
-  messagingSenderId: "671484900822",
-  appId: "1:671484900822:web:7e35757638c528d5a06077",
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
